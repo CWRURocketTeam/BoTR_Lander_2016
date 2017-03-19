@@ -17,7 +17,6 @@ double get_altitude (void);
 void light_setup (int pin);
 int get_light (void);
 
-void voltmeter_setup (int pin);
 double get_voltage (void);
 
 void camera_setup (int pin1, int pin2);

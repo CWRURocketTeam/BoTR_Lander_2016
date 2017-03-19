@@ -1,9 +1,6 @@
 #include "drivers.h"
 
-void voltmeter_setup (int pin)
-{
-}
-
 double get_voltage (void)
 {
+	return analogRead(3)/1024.0*55.0;
 }
