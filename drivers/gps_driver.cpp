@@ -8,7 +8,7 @@ Adafruit_GPS* GPS;
 void gps_setup (int pin1, int pin2)
 {
 
-  mySerial = new SoftwareSerial(3, 2);
+  mySerial = new SoftwareSerial(pin1, pin2);
   GPS = new Adafruit_GPS(mySerial);
 
   // 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
@@ -27,19 +27,29 @@ void gps_setup (int pin1, int pin2)
 
   TIMSK0 &= ~_BV(OCIE0A);
 
-  delay(1000);
-
   mySerial->println(PMTK_Q_RELEASE);
 }
 
 
 struct gps_coord get_gps_coords (void)
 {
-// if a sentence is received, we can check the checksum, parse it...
-  while (!GPS->newNMEAreceived())
+  struct gps_coord my_coord;
+  int i;
+
+  // if a sentence is received, we can check the checksum, parse it...
+  for (i; i < 100; i++)
   {
-	delay(20);
         GPS->read();
+	if (GPS->newNMEAreceived())
+		break;
+	delay(20);
+  }
+
+  if (i = 100)
+  {
+     my_coord.latitude = 0;
+     my_coord.longitude = 0;
+     return my_coord;
   }
     // a tricky thing here is if we print the NMEA sentence, or data
     // we end up not listening and catching other sentences! 
@@ -47,9 +57,7 @@ struct gps_coord get_gps_coords (void)
     //Serial.println(GPS.lastNMEA());   // this also sets the newNMEAreceived() flag to false
   
   GPS->parse(GPS->lastNMEA());   // this also sets the newNMEAreceived() flag to false
-      //return ;  // we can fail to parse a sentence in which case we should just wait for another
 
-  struct gps_coord my_coord;
   my_coord.latitude = GPS->latitude;
   my_coord.longitude = GPS->longitude; 
   return my_coord;
