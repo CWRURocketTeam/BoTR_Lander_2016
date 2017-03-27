@@ -8,7 +8,7 @@
 Adafruit_BMP085 bmp = Adafruit_BMP085();
 
 /*need to input current air pressure @ sea level for accurate reading*/
-void altimeter_setup (int pin1, int pin2)
+void altimeter_setup (void)
 {
   bmp.begin();
 }

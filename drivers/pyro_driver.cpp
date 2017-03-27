@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include "drivers.h"
 
 bool valid_pyrochannel(int chan)

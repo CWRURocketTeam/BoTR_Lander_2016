@@ -7,14 +7,13 @@ struct gps_coord
 void gps_setup (int pin1, int pin2);
 struct gps_coord get_gps_coords (void);
 
-void humidity_setup (int pin);
+void humidity_setup (int pin=7);
 int get_humidity (void);
 double get_temperature(bool farenheight);
 
-void altimeter_setup (int pin1, int pin2);
+void altimeter_setup (void);
 double get_altitude (void);
 
-void light_setup (int pin);
 int get_light (void);
 
 double get_voltage (void);

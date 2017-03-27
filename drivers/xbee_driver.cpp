@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include "drivers.h"
 
 void xbee_setup (int pin1, int pin2)
