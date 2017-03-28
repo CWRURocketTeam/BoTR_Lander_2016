@@ -8,6 +8,12 @@
 
 #define RESET_LIMIT 10
 
+char can_send;
+int recv_timeout;
+int send_timeout;
+int (*recv_function)(char*, int, int);
+void (*send_function)(char*, int);
+
 char to_send[MAX_PACK_SIZE];
 int send_data_len;
 char has_unack_data;

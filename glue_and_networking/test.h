@@ -5,7 +5,7 @@
 
 #define PORT 5050
 
-int socket_fd;
+extern int socket_fd;
 
 void __send_function (char* data, int len);
 

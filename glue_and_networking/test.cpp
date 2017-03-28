@@ -4,6 +4,8 @@
 #include <poll.h>
 #include <stdlib.h>
 
+int socket_fd;
+
 void __send_function (char* data, int len)
 {
 	if (!(rand () % 2)) //Simulate loss
