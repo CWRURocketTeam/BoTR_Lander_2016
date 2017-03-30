@@ -7,7 +7,7 @@
 #define PACK_DAT    3
 #define PACK_UNK    0
 
-#define MAX_PACK_SIZE 1024
+#define MAX_PACK_SIZE 128
 
 struct packet_hdr
 {
