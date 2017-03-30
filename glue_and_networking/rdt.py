@@ -48,15 +48,11 @@ def recv_cycle():
 
 	buf = recv_function(header_size, recv_timeout)
 
-	print(str(buf))
-
 	if (buf is None) or (len(buf) < header_size):
 		return
 	else:
 		length = packet_length(buf)
 		buf += bytearray(recv_function(length-header_size, recv_timeout))
-
-		print(length)
 
 		if len(buf) != length:
 			return
@@ -66,8 +62,6 @@ def recv_cycle():
 		else:
 			parsed_packet = unpack_packet(buf)
 
-			print(parsed_packet)
-
 			if parsed_packet[2] == PACK_UNK:
 				return
 			elif parsed_packet[2] == PACK_ACK:
@@ -76,6 +70,8 @@ def recv_cycle():
 					has_unack_data = False
 
 					send_seq += 1
+					if send_seq >= 256: #account for overflow
+						send_seq = 0
 
 					reset_counter = 0
 				else:
@@ -88,14 +84,13 @@ def recv_cycle():
 					recv_new_data = True
 
 					recv_seq += 1
+					if recv_seq >= 256:
+						recv_seq = 0
 
 					reset_counter = 0
 				else:
 					reset_counter += 1
 
-				print (recv_seq)
-
-				print (create_packet(bytearray(0), PACK_ACK, recv_seq - 1))
 				send_function(create_packet(bytearray(0), PACK_ACK, recv_seq - 1))
 
 	if reset_counter == RESET_LIMIT:

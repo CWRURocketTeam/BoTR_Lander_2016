@@ -19,9 +19,11 @@ def create_packet(to_packetize, packet_type, seq_num):
 	global header_format
 	global header_size
 
+	if seq_num < 0:
+		seq_num = 255
+
 	tmp = bytearray(pack(header_format + str(len(to_packetize)) + 's', 0, len(to_packetize) + header_size, packet_type, seq_num, bytearray(to_packetize)))
 	new_checksum = ones_checksum(tmp)
-	print(new_checksum)
 	return bytearray(pack(header_format + str(len(to_packetize)) + 's', new_checksum, len(to_packetize) + header_size, packet_type, seq_num, bytearray(to_packetize)))
 
 def unpack_packet(to_unpack):
