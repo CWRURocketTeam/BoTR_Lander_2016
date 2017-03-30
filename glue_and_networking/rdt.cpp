@@ -56,10 +56,13 @@ void recv_cycle (void)
 
 	len = recv_function(buf, sizeof(struct packet_hdr), recv_timeout);
 
-	if (len < sizeof(packet_header))
+	if (len < sizeof(struct packet_hdr))
 		return;
 
-	len = recv_function(buf + sizeof(struct packet_hdr), packet_header->len - sizeof(struct packet_hdr), recv_timeout);
+	if (packet_header->len > MAX_PACK_SIZE)
+		return;
+
+	len += recv_function(buf + sizeof(struct packet_hdr), packet_header->len - sizeof(struct packet_hdr), recv_timeout);
 
 	if (len != packet_header->len)
 		return;
@@ -78,7 +81,7 @@ void recv_cycle (void)
 
 			reset_counter = 0;
 		}
-		else if (packet_header->seq_num == 0)
+		else
 			reset_counter++;
 	}
 	else if (packet_header->type == PACK_DAT)
@@ -93,7 +96,7 @@ void recv_cycle (void)
 
 			reset_counter = 0;
 		}
-		else if (packet_header->seq_num == 0)
+		else
 			reset_counter++;
 
 		ack_packet.checksum = 0;

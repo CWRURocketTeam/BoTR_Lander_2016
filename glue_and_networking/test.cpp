@@ -16,6 +16,9 @@ int __recv_function (char* data, int len, int timeout)
 {
 	struct pollfd event;
 	int recv_len = 0;
+
+	if (!len)
+		return 0;
 	
 	event.fd = socket_fd;
 	event.events = POLLIN;
@@ -23,8 +26,8 @@ int __recv_function (char* data, int len, int timeout)
 	if (poll (&event, 1, timeout/1000))
 		recv_len = recv (socket_fd, data, len, 0);
 
-	if (recv_len && (rand () % 2)) //Simulate corruption
-		data [rand () % recv_len] = rand () & 0xFF;
+//	if (recv_len && (rand () % 2)) //Simulate corruption
+//		data [rand () % recv_len] = rand () & 0xFF;
 
 	return recv_len;
 }

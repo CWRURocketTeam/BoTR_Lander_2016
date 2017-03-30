@@ -66,6 +66,8 @@ def recv_cycle():
 		else:
 			parsed_packet = unpack_packet(buf)
 
+			print(parsed_packet)
+
 			if parsed_packet[2] == PACK_UNK:
 				return
 			elif parsed_packet[2] == PACK_ACK:
@@ -76,7 +78,7 @@ def recv_cycle():
 					send_seq += 1
 
 					reset_counter = 0
-				elif parsed_packet[3] == 0:
+				else:
 					reset_counter += 1
 			elif parsed_packet[2] == PACK_DAT:
 				if parsed_packet[3] == recv_seq:
@@ -88,9 +90,12 @@ def recv_cycle():
 					recv_seq += 1
 
 					reset_counter = 0
-				elif parsed_packet[3] == 0:
+				else:
 					reset_counter += 1
 
+				print (recv_seq)
+
+				print (create_packet(bytearray(0), PACK_ACK, recv_seq - 1))
 				send_function(create_packet(bytearray(0), PACK_ACK, recv_seq - 1))
 
 	if reset_counter == RESET_LIMIT:

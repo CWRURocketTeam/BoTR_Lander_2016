@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <stdio.h>
 #include <sys/socket.h>
 #include <netinet/ip.h>
@@ -31,7 +32,10 @@ int main (int argc, char** argv)
 	initialize (__recv_function, __send_function, 10000, 10000);
 
 	while (!can_send)
+	{
 		dispatch ();
+		usleep(250000);
+	}
 
 	send_data ("Hello world!", strlen ("Hello world!") + 1);
 
@@ -40,6 +44,8 @@ int main (int argc, char** argv)
 		dispatch ();
 
 		tmp = recv_data ();
+
+		usleep(100000);
 	}
 
 	printf ("%s\n", tmp);

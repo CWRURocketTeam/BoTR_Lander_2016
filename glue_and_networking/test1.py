@@ -31,15 +31,18 @@ while tmp is None:
 	dispatch()
 
 	tmp = recv_data()
+	time.sleep(0.25)
 
 print(tmp.decode("utf-8") + "\n")
 
 while not done_sending():
 	dispatch()
+	time.sleep(0.25)
 
-send_data(bytearray("Goodbye world!"))
+send_data(bytearray("Goodbye world!", "utf-8"))
 
 while not done_sending():
 	dispatch()
+	time.sleep(0.25)
 
 connection.close()
