@@ -43,10 +43,12 @@ int main (int argc, char** argv)
 
 	printf ("%s\n", tmp);
 
-	while (!can_send)
+	while (1)
+	{
 		dispatch ();
-
-	send_data ("Goodbye world!", strlen ("Goodbye world!") + 1);
+		if (can_send)
+			send_data ("Goodbye world!", strlen ("Goodbye world!") + 1);
+	}
 
 	while (!can_send)
 		dispatch ();

@@ -32,12 +32,12 @@ while tmp is None:
 
 	tmp = recv_data()
 
-print tmp + "\n"
+print(tmp.decode("utf-8") + "\n")
 
 while not done_sending():
 	dispatch()
 
-send_data("Goodbye world!")
+send_data(bytearray("Goodbye world!"))
 
 while not done_sending():
 	dispatch()

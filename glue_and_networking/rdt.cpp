@@ -54,9 +54,14 @@ void recv_cycle (void)
 	struct packet_hdr ack_packet;
 	int len;
 
-	len = recv_function(buf, MAX_PACK_SIZE, recv_timeout);
+	len = recv_function(buf, sizeof(struct packet_hdr), recv_timeout);
 
-	if (!len)
+	if (len < sizeof(packet_header))
+		return;
+
+	len = recv_function(buf + sizeof(struct packet_hdr), packet_header->len - sizeof(struct packet_hdr), recv_timeout);
+
+	if (len != packet_header->len)
 		return;
 	else if (!check_checksum(buf, len))
 		return;

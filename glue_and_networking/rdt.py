@@ -42,46 +42,59 @@ def recv_cycle():
 	global PACK_ACK
 	global PACK_DAT
 	global PACK_UNK
+	global header_size
 
 	buf = bytearray(MAX_PACK_SIZE)
 
-	buf = recv_function(MAX_PACK_SIZE, recv_timeout)
+	buf = recv_function(header_size, recv_timeout)
 
-	if (buf is None) or (len(buf) == 0):
-		return
-	elif not check_checksum(buf):
+	print(str(buf))
+
+	if (buf is None) or (len(buf) < header_size):
 		return
 	else:
-		parsed_packet = unpack_packet(buf)
+		length = packet_length(buf)
+		buf += bytearray(recv_function(length-header_size, recv_timeout))
 
-		if parsed_packet[2] == PACK_UNK:
+		print(length)
+
+		if len(buf) != length:
 			return
-		elif parsed_packet[2] == PACK_ACK:
-			if parsed_packet[3] == send_seq:
-				can_send = True
-				has_unack_data = False
 
-				send_seq += 1
+		if not check_checksum(buf):
+			return
+		else:
+			parsed_packet = unpack_packet(buf)
 
-				reset_counter = 0
-			elif parsed_packet[3] == 0:
-				reset_counter += 1
-		elif parsed_packet[2] == PACK_DAT:
-			if parsed_packet[3] == recv_seq:
-				global to_recv
+			if parsed_packet[2] == PACK_UNK:
+				return
+			elif parsed_packet[2] == PACK_ACK:
+				if parsed_packet[3] == send_seq:
+					can_send = True
+					has_unack_data = False
 
-				to_recv[:] = buf
-				recv_new_data = True
+					send_seq += 1
 
-				recv_seq += 1
+					reset_counter = 0
+				elif parsed_packet[3] == 0:
+					reset_counter += 1
+			elif parsed_packet[2] == PACK_DAT:
+				if parsed_packet[3] == recv_seq:
+					global to_recv
 
-				reset_counter = 0
-			elif parsed_packet[3] == 0:
-				reset_counter += 1
+					to_recv[:] = buf
+					recv_new_data = True
 
-			send_function(create_packet(bytearray(0), PACK_ACK, recv_seq - 1))
+					recv_seq += 1
+
+					reset_counter = 0
+				elif parsed_packet[3] == 0:
+					reset_counter += 1
+
+				send_function(create_packet(bytearray(0), PACK_ACK, recv_seq - 1))
 
 	if reset_counter == RESET_LIMIT:
+		print("reset!")
 		send_seq = 0
 		recv_seq = 0
 		reset_counter = 0

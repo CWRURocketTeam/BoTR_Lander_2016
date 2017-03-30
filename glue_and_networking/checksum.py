@@ -4,8 +4,9 @@ def ones_checksum(packet_bytes):
 	if len(packet_bytes) % 2 == 1:
 		packet_bytes = packet_bytes + bytearray(1)
 
-	for i in range(0, len(packet_bytes)/2):
+	for i in range(0, int(len(packet_bytes)/2)):
 		current_word = packet_bytes[i*2] << 8
+		#if i*2 + 1 < len(packet_bytes):
 		current_word |= packet_bytes[i*2 + 1]
 
 		checksum += current_word
@@ -23,5 +24,8 @@ def check_checksum(packet_bytes):
 
 	packet_bytes[0] = 0
 	packet_bytes[1] = 0
+
+	print(transmitted_checksum)
+	print(ones_checksum(packet_bytes))
 
 	return ones_checksum(packet_bytes) == transmitted_checksum

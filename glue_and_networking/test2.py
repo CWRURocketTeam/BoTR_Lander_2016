@@ -21,21 +21,24 @@ def my_recv_function(size, timeout):
 	else:
 		return None
 
-initialize(my_recv_function, mysocket.send, 10, 10)
+initialize(my_recv_function, mysocket.send, 10000, 10000)
 
 tmp = None
 
 while not done_sending():
 	dispatch()
 
-send_data("Hello world!")
+send_data(bytearray("Hello world!", "utf-8"))
 
-while tmp is None:
-	dispatch()
+#while tmp is None:
+#	dispatch()
 
-	tmp = recv_data()
+#	tmp = recv_data()
 
-print tmp + "\n"
+#print(tmp.decode("utf-8") + "\n")
 
 while True:
 	dispatch()
+	tmp = recv_data()
+	if not (tmp is None):
+		print(tmp.decode("utf-8") + "\n")
