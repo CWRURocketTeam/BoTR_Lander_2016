@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <Arduino.h>
 
 #include "rdt.h"
 #include "packet.h"
@@ -53,17 +54,17 @@ void recv_cycle (void)
 	struct packet_hdr* packet_header = (struct packet_hdr*)buf;
 	struct packet_hdr ack_packet;
 	int len;
-
+	
 	len = recv_function(buf, sizeof(struct packet_hdr), recv_timeout);
 
 	if (len < sizeof(struct packet_hdr))
 		return;
-
+	
 	if (packet_header->len > MAX_PACK_SIZE)
 		return;
-
+	
 	len += recv_function(buf + sizeof(struct packet_hdr), packet_header->len - sizeof(struct packet_hdr), recv_timeout);
-
+	
 	if (len != packet_header->len)
 		return;
 	else if (!check_checksum(buf, len))
@@ -103,12 +104,18 @@ void recv_cycle (void)
 		ack_packet.len = sizeof(struct packet_hdr);
 		ack_packet.type = PACK_ACK;
 		ack_packet.seq_num = recv_seq-1;
-		ack_packet.checksum = ones_checksum ((char*)&ack_packet, sizeof(struct packet_hdr));
+		ack_packet.checksum = ones_checksum ((uint8_t*)&ack_packet, sizeof(struct packet_hdr));
 		send_function ((char*)&ack_packet, sizeof(struct packet_hdr));
 	}
 
-	if (reset_counter == RESET_LIMIT) //We're getting a lot of packets from remote host with a 0 sequence number, probably means it crashed and we need to reset our sequence numbers to catch up
+	Serial.print("Sequence number: ");
+	Serial.println(send_seq);
+	Serial.print("Reset counter: ");
+	Serial.println(reset_counter);
+	
+	if (reset_counter == RESET_LIMIT) //We're getting a lot of packets from remote host with a wrong number, probably means it crashed and we need to reset our sequence numbers to catch up
 	{
+		Serial.println("Reset!");
 		send_seq = 0;
 		recv_seq = 0;
 		reset_counter = 0;
@@ -117,9 +124,18 @@ void recv_cycle (void)
 
 void send_cycle (void)
 {
+	struct packet_hdr* send_header = (struct packet_hdr*)to_send;
+	
 	if (!has_unack_data)
 		return;
-
+	
+	if (send_header->seq_num != send_seq)
+	{
+		send_header->checksum = 0;
+		send_header->seq_num = send_seq;
+		send_header->checksum = ones_checksum ((uint8_t*)to_send, send_header->len);
+	}
+	
 	send_function (to_send, send_data_len);
 }
 
@@ -155,7 +171,7 @@ void send_data (char* data, int len)
 	memcpy (to_send + sizeof(struct packet_hdr), data, len);
 	send_data_len = send_header->len;
 
-	send_header->checksum = ones_checksum (to_send, send_header->len);
+	send_header->checksum = ones_checksum ((uint8_t*)to_send, send_header->len);
 
 	has_unack_data = 1;
 	can_send = 0;

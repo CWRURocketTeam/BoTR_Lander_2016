@@ -17,26 +17,6 @@ void xbee_send (char* buf, int len)
 
 int xbee_recv (char* buf, int len, int timeout)
 {
-	int i;
-
-	xbee_serial->listen();
-
-	for (i = 0; i < timeout; i+=10)
-	{
-		if (xbee_serial->available())
-			break;
-
-		delay(9);
-	}
-	if (i >= timeout)
-		return 0;
-
-	i = 0;
-	while (i < len && xbee_serial->available())
-	{
-		buf[0] = xbee_serial->read();
-		buf++;
-		i++;
-		delay(1);
-	}
+	xbee_serial->setTimeout(timeout);
+	return xbee_serial->readBytes(buf, len);
 }

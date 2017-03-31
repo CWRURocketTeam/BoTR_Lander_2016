@@ -1,7 +1,8 @@
+#include <Arduino.h>
 #include "checksum.h"
 #include "packet.h"
 
-uint16_t ones_checksum (char* packet_bytes, int len)
+uint16_t ones_checksum (uint8_t* packet_bytes, int len)
 {
 	uint32_t checksum = 0;
 	uint16_t current_word;
@@ -35,5 +36,5 @@ char check_checksum (char* packet_bytes, int len)
 
 	header->checksum = 0;
 
-	return ones_checksum(packet_bytes, len) == transmitted_checksum;
+	return ones_checksum((uint8_t*)packet_bytes, len) == transmitted_checksum;
 }
