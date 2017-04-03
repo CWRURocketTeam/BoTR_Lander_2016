@@ -108,14 +108,8 @@ void recv_cycle (void)
 		send_function ((char*)&ack_packet, sizeof(struct packet_hdr));
 	}
 
-	Serial.print("Sequence number: ");
-	Serial.println(send_seq);
-	Serial.print("Reset counter: ");
-	Serial.println(reset_counter);
-	
 	if (reset_counter == RESET_LIMIT) //We're getting a lot of packets from remote host with a wrong number, probably means it crashed and we need to reset our sequence numbers to catch up
 	{
-		Serial.println("Reset!");
 		send_seq = 0;
 		recv_seq = 0;
 		reset_counter = 0;
