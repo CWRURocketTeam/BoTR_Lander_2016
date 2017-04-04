@@ -107,7 +107,7 @@ void recv_cycle (void)
 		ack_packet.checksum = ones_checksum ((uint8_t*)&ack_packet, sizeof(struct packet_hdr));
 		send_function ((char*)&ack_packet, sizeof(struct packet_hdr));
 	}
-
+	
 	if (reset_counter == RESET_LIMIT) //We're getting a lot of packets from remote host with a wrong number, probably means it crashed and we need to reset our sequence numbers to catch up
 	{
 		send_seq = 0;

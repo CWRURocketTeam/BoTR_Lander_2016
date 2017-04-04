@@ -14,7 +14,8 @@ struct telemetry_packet
 	uint16_t humidity;
 	float temperature;
 	float altitude;
-	uint16_t light;	
+	uint16_t light;
+	float voltage;
 };
 
 struct camera_packet

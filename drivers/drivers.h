@@ -24,7 +24,7 @@ void camera_read (void (*callback)(char*, int, char, void*), void* parameter); /
 									       //The bool is whether or not this is the last time the callback will be called for this current read loop. Useful for control packet fragmentation, etc.
 									       //The last parameter of the callback is the same as the last parameter of the camera_read function. We probably won't be using this for sending camera data over the network, but this is helpful for e.g. saving to an SD card. You can use this parameter to specify the filename
 
-void xbee_setup (int pin1=13, int pin2=12, unsigned int baudrate=115200);
+void xbee_setup (int pin1=13, int pin2=12, unsigned int __baudrate=9600);
 void xbee_send (char* buf, int len);
 int xbee_recv (char* buf, int len, int timeout);
 
