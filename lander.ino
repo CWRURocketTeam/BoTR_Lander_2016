@@ -4,10 +4,12 @@
 #include <Servo.h>
 
 //Remember: always leave RESET unplugged unless you have the programmer powered lest you try to debug an error you don't understand.
+//Also, UART is high by default and the TX pin happens to be the same as the first continuity check pin. So if you have the programmer in it will register continuity
 
 int i = 0;
 
 Servo camera_servo;
+Servo latch_servo;
 
 void camera_callback (char* buf, int len, char is_last, void* arg)
 {
@@ -84,10 +86,14 @@ void loop() {
     fire_pyrochannel(1);
   }
 
+  delay(5000);
+  latch_servo.attach(8);
+  latch_servo.write(100);
+  latch_servo.detach();
+
   while (1)
   {
-    dispatch();
-    delay(5000);
+    delay(1000);
     camera_read(camera_callback, NULL);
     camera_servo.attach(9); //Need to attach and detach when using this servo because camera interferes
     camera_servo.write(90);

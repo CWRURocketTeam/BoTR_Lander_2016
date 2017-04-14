@@ -7,7 +7,7 @@ Adafruit_VC0706* cam;
 void camera_setup(int pin1, int pin2)
 {
 	cam = new Adafruit_VC0706(new SoftwareSerial(pin1, pin2, 38400));
-	 cam->begin();
+	cam->begin();
 	cam->setImageSize(VC0706_640x480);
 }
 
@@ -28,4 +28,5 @@ void camera_read(void (*callback)(char*, int, char, void*), void* parameter)
 	}
 	buf = cam->readPicture(len);
 	callback(buf, len, 1, parameter);
+	cam->resumeVideo();
 }

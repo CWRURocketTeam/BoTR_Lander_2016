@@ -2,7 +2,7 @@ from rdt import *
 import serial
 import struct
 
-ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=0.25)
+ser = serial.Serial('/dev/ttyUSB0', 57600, timeout=0.25)
 
 def my_recv_function(size, timeout):
 	return bytearray(ser.read(size))
@@ -22,6 +22,8 @@ while True:
 
 	tmp = recv_data()
 	if not (tmp is None):
+		if tmp[0] == 0x55 and tmp[1] == 0x55: #Check continuity
+			print("Continuity: " + str(tmp[2]))
 		if tmp[0] == 0x41 and tmp[1] == 0x43: #Arduino is little endian, so the numbers are the reverse of what you'd expect
 			parsed_tmp = struct.unpack("<HHB32s", tmp)
 			outfile.write(parsed_tmp[3])
