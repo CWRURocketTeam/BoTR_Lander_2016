@@ -9,7 +9,7 @@ import time
 import random
 from multiprocessing import Process, Lock
 
-##import gs_recv as recv
+##import gs_recv as recv   #gets xbee data with recv.get_data(ser)
 
 
 ###
@@ -139,11 +139,11 @@ def plot_cont(xmax, ser):
 
 
 def handle_telemetry(ser):
+    global packetnum
     data = rand_telemetry()  ##testing
 ##  data = recv.get_data(ser)
     if len(data) > 4:
         print("got a telemetry packet")
-        global packetnum
         packetnum += 1
         print (str(packetnum) + " packets have been recieved") 
         return data
@@ -167,10 +167,10 @@ def handle_camera(ser):
 
 ### takes a list of images and stitches them together sequentially
 def panorama_cont(ser):
+    global imgnum
     out = None
     img = None
     prev = None
-    global imgnum
 
     while imgnum < 4:  #replace 4 with the number of images in a panorama
         while img is None:  #exits once we have a full image
