@@ -83,36 +83,43 @@ def plot_cont(xmax, ser):
         x = range(len(latitudes))
         ax1.clear()
         ax1.plot(x, latitudes, 'r-')
+        ax1.set_ylabel('latitude ')
 
     def update2(i):
         x = range(len(longitudes))
         ax2.clear()
         ax2.plot(x, longitudes, 'b-')
+        ax2.set_ylabel('longitude ')
 
     def update3(i):
         x = range(len(humidities))
         ax3.clear()
         ax3.plot(x, humidities, 'g-')
+        ax3.set_ylabel('% humidity ')
 
     def update4(i):
         x = range(len(temperatures))
         ax4.clear()
         ax4.plot(x, temperatures, 'c-')
+        ax4.set_ylabel('degrees fahrenheit ')
 
     def update5(i):
         x = range(len(altitudes))
         ax5.clear()
         ax5.plot(x, altitudes, 'm-')
+        ax5.set_ylabel('meters ')
 
     def update6(i):
         x = range(len(lights))
         ax6.clear()
         ax6.plot(x, lights, 'y-')
+        ax6.set_ylabel('lumens ')
 
     def update7(i):
         x = range(len(voltages))
         ax7.clear()
         ax7.plot(x, voltages, 'k-')
+        ax7.set_ylabel('volts ')
 
         #the packet has been plotted -> get new packet 
         data = []
