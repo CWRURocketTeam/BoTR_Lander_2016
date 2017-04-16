@@ -53,7 +53,6 @@ def rand_telemetry():
 
 
 ### continuously plots the result of a given function, once per second
-#def plot_cont(func, xmax):
 def plot_cont(xmax, ser):
 
     data = []
@@ -172,7 +171,7 @@ def handle_camera(ser):
                 return img
  
 
-### takes a list of images and stitches them together sequentially
+### generates a 360 degree panorama from camera packets
 def panorama_cont(ser):
     global imgnum
     out = None
