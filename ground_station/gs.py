@@ -203,7 +203,7 @@ if __name__ == '__main__':
 
     ser = None  ##testing
 ##  ser = serial.Serial('/dev/ttyUSB0', 57600, timeout=0.25)
-##  initialize(my_recv_function, my_send_function, 250, 250)  #initialize the xbee connection
+##  initialize(recv.my_recv_function, recv.my_send_function, 250, 250)  #initialize the xbee connection
 
     try:
         plotpr = Process(target=plot_cont, args=(999, ser))
