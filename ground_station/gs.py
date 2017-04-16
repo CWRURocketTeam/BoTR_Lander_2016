@@ -188,8 +188,6 @@ def panorama_cont(ser):
 
         elif out is not None:
             out = stitch(out, img)
-
-        if out is not None:
             out.show()
             out.save('pan' + str(i) + '.jpg')  #save panorama to disk
 
