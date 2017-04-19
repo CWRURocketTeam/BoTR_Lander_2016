@@ -9,17 +9,39 @@ import time
 import random
 from multiprocessing import Process, Lock
 
-##import gs_recv as recv   #gets xbee data with recv.get_data(ser)
+import serial
+from rdt import * 
+import select
+import struct
 
 
 ###
 ### CWRU Case Rocket Team 2017 ground station: data processing
+### @TODO look into pipes/queues to prevent race conditions
 ###
 
-
-#global variables for BOTR scoring
+ 
+### global variables
 imgnum = 0
-packetnum = 0  
+packetnum = 0 
+##ser = serial.Serial('/dev/ttyUSB0', 57600, timeout=0.25)
+ser = None ##testing
+image = None
+telemetry_data = []
+camera_data = []
+oldtel = True  #true if the telemetry packet has already been plotted
+oldcam = False  #true if the camera packet has already been processed
+
+
+### handles the array of command line arguments
+### @TODO add/configure switches, display how they work in helpmsg
+def handle_args():
+    helpmsg = "[ help message goes here ]"
+    for arg in sys.argv:
+#       print(arg)
+        if arg == "-h" or arg == "-help" or arg == "--help" or arg == "--h":
+            print(helpmsg)
+            break
 
 
 ### displays an image from the local directory and prints out its properties
@@ -52,13 +74,17 @@ def rand_telemetry():
     return arr 
 
 
-### continuously plots the result of a given function, once per second
-def plot_cont(xmax, ser):
+### continuously plots telemetry info 
+def plot_cont(lock, xmax):
+    lock.acquire()
+    global oldtel
+    global telemetry_data
 
-    data = []
-    while len(data) < 4:   # fetch packets until we get a telemetry one
-        data = handle_telemetry(ser)
- 
+    i = 0 #dummy var to stall this thread until we have a packet to graph
+    while oldtel or telemetry_data == []:
+        print("plot: waiting")
+        i += 2
+
     latitudes = [data[1]]
     longitudes = [data[2]]
     humidities = [data[3]]
@@ -66,6 +92,8 @@ def plot_cont(xmax, ser):
     altitudes = [data[5]]
     lights = [data[6]]
     voltages = [data[7]]
+
+    oldtel = True
 
     fig = plt.figure()
 
@@ -94,36 +122,36 @@ def plot_cont(xmax, ser):
         x = range(len(humidities))
         ax3.clear()
         ax3.plot(x, humidities, 'g-')
-        ax3.set_ylabel('% humidity ')
+        ax3.set_ylabel('humidity (%) ')
 
     def update4(i):
         x = range(len(temperatures))
         ax4.clear()
         ax4.plot(x, temperatures, 'c-')
-        ax4.set_ylabel('degrees fahrenheit ')
+        ax4.set_ylabel('temp (degrees fahrenheit) ')
 
     def update5(i):
         x = range(len(altitudes))
         ax5.clear()
         ax5.plot(x, altitudes, 'm-')
-        ax5.set_ylabel('meters ')
+        ax5.set_ylabel('altitude (meters) ')
 
     def update6(i):
         x = range(len(lights))
         ax6.clear()
         ax6.plot(x, lights, 'y-')
-        ax6.set_ylabel('lumens ')
+        ax6.set_ylabel('light (%) ')
 
     def update7(i):
         x = range(len(voltages))
         ax7.clear()
         ax7.plot(x, voltages, 'k-')
-        ax7.set_ylabel('volts ')
+        ax7.set_ylabel('voltage (volts) ')
 
-        #the packet has been plotted -> get new packet 
-        data = []
-        while len(data) < 4:   # fetch packets until we get another telemetry one
-            data = handle_telemetry(ser)
+        i = 0 #dummy var to stall this thread until we have a new packet to graph
+        while oldtel or telemetry_data == []:
+            i += 2
+
         latitudes.append(data[1])
         longitudes.append(data[2])
         humidities.append(data[3])
@@ -141,75 +169,120 @@ def plot_cont(xmax, ser):
     a7 = anim.FuncAnimation(fig, update7, frames=xmax, repeat=False)
 
     plt.show()
+    lock.release()
 
 
-
-def handle_telemetry(ser):
+def create_image():
+    global image
     global packetnum
-    data = rand_telemetry()  ##testing
-##  data = recv.get_data(ser)
-    if len(data) > 4:
-        print("got a telemetry packet")
-        packetnum += 1
-        print (str(packetnum) + " packets have been recieved") 
-        return data
+    global oldcam
 
-
-def handle_camera(ser):
-    global packetnum
-    data = [0x00, 0x00, 0x00, bytes([0x01]*32)]  ##testing
-##  data = recv.get_data(ser)
-    if len(data) < 5 and len(data) > 1:
-        print("got a camera packet")
-        packetnum += 1
-        print (str(packetnum) + " packets have been recieved") 
-        ### add to current image
-        with open('o.jpg', 'bw') as img:
-            img.write(data[3])
-            if data[2] != 0: 
-                print("made an image")
-                return img
+    if not oldcam and camera_data != []:
+        image.write(camera_data[3])  #add to current image
+        oldcam = True
+        if data[2] != 0:  #signals end of image
+            print("completed an image!")
+            return True
+    return False
  
 
 ### generates a 360 degree panorama from camera packets
-def panorama_cont(ser):
+def panorama_cont(lock):
+    lock.acquire()
+    global image 
     global imgnum
-    out = None
-    img = None
-    prev = None
+    firstimg = None
+    out = None   #stores current panoramic image
 
-    while imgnum < 4:  #replace 4 with the number of images in a panorama
-        while img is None:  #exits once we have a full image
-            img = handle_camera(ser)
+    while imgnum < 4:  #assumes there are 4 images in a panorama
+        image = open('out.jpg', 'bw')  #start new image
+        done = False
+        while not done:  #exits once we have a full image
+            done = create_image()
 
-        if out is None and prev is not None: 
-            out = stitch(prev, img)
-
-        elif out is not None:
-            out = stitch(out, img)
-            out.show()
-            out.save('pan' + str(i) + '.jpg')  #save panorama to disk
+        if firstimg is None:
+            firstimg = image
+        else:
+            if out is None:
+                out = stitch(firstimg, image)
+            else:
+                out = stitch(out, image)
+                out.show()
+                out.save('pan' + str(imgnum) + '.jpg')  #save iteration of panorama to disk
 
         imgnum += 1 
         print (str(imgnum) + " images have been constructed")
-        img.save('img' + str(i) + '.jpg')  #save image to disk 
-        prev = img
-        img = None
+        image.save('img' + str(imgnum) + '.jpg')  #save image to disk 
+        image = None
 
-               
+    out.save('completed_pan' + str((int)(imgnum/4)) + '.jpg')  #save final panorama to disk
+    lock.release()
+
+
+def my_recv_function(size, timeout):
+    global ser
+    return bytearray(ser.read(size))
+
+def my_send_function(to_send):
+    global ser
+    ser.write(to_send)
+
+
+### gets and unpacks structs of xbee data ( either camera or telemetry )
+def get_data(lock):
+    lock.acquire()
+    global oldcam
+    global oldtel
+    global camera_data
+    global telemetry_data
+    tmp = None
+    parsed_tmp = None
+
+    while True:
+        if oldcam or oldtel:
+
+#            camera_data = [0x00, 0x00, 0x00, bytes([0x04]*32)] ##testing
+            telemetry_data = rand_telemetry() ##testing
+#            oldcam = False
+            oldtel = False
+
+##          dispatch()
+##          tmp = recv_data()
+
+            if not (tmp is None):
+                #Arduino is little endian, so the numbers are the reverse of what you'd expect
+                #camera packet
+                if tmp[0] == 0x41 and tmp[1] == 0x43:
+                    parsed_tmp = struct.unpack("<HHB32s", tmp)
+                    camera_data = parsed_tmp
+                    oldcam = False
+                    print("got a camera packet")
+                    packetnum += 1
+                    #print (str(packetnum) + " packets have been recieved") 
+
+                #telemetry packet
+                if tmp[0] == 0x45 and tmp[1] == 0x54:
+                    parsed_tmp = struct.unpack("<HffHffHf", tmp)
+                    telemetry_data = parsed_tmp
+                    oldtel = False
+    lock.release()
+
+
 
 if __name__ == '__main__':
-
-    ser = None  ##testing
-##  ser = serial.Serial('/dev/ttyUSB0', 57600, timeout=0.25)
-##  initialize(recv.my_recv_function, recv.my_send_function, 250, 250)  #initialize the xbee connection
+    
+    lock = Lock()
+    initialize(my_recv_function, my_send_function, 250, 250)  #initialize the xbee connection
 
     try:
-        plotpr = Process(target=plot_cont, args=(999, ser))
-        imgpr = Process(target=panorama_cont, args=(ser,))
+        getdatapr = Process(target=get_data, args=(lock,))
+        plotpr = Process(target=plot_cont, args=(lock,99999))
+        imgpr = Process(target=panorama_cont, args=(lock,))
+        getdatapr.start()
         plotpr.start()
         imgpr.start()
     except KeyboardInterrupt:
+        getdatapr.terminate()
         plotpr.terminate()
         imgpr.terminate()
 
