@@ -169,7 +169,7 @@ def my_send_function(to_send):
 
 
 ### gets and unpacks structs of xbee data ( either camera or telemetry )
-def get_data(lock):
+def get_data():
     imgnum = 0
     packetnum = 0
     firstpacket = False  #to see if a packet is the first in a new image (not the first image)
@@ -201,8 +201,8 @@ def get_data(lock):
                     print (str(packetnum) + " packets have been recieved") 
                     parsed_tmp = struct.unpack("<HffHffHf", tmp)
                     for i in range (1, 8): # the only way to update a global array
-                        #teldata[i] = parsed_tmp[i]
-                        teldata[i] = rand() ##testing
+                        teldata[i] = parsed_tmp[i]
+                        #teldata[i] = rand() ##testing
                     oldtel.value = 0  #this is a new packet, so allow it to be plotted
 
                 #camera packet
