@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as anim
 
 from PIL import Image, ImageFile
+import numpy as np
 import multiprocessing as mp
 from rdt import * 
 import serial
@@ -12,6 +13,8 @@ import struct
 ##for testing:
 import random
 import time
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True #lol not my fault, blame PIL
 
 
 ###
@@ -37,23 +40,6 @@ def handle_args():
             break
 
 
-### displays an image from the local directory and prints out its properties
-def showimage(filename):
-    im = Image.open(filename)
-    print(im.format, im.size, im.mode)
-    im.show()
-
-
-### takes two images and returns a new image with the 1st stitched to the right of the 2nd
-def stitch(im1, im2):
-    if ((im1.format, im1.mode) != (im2.format, im2.mode)): 
-        print("images not optimal for stitching, try making them the same format and mode to increase speeds")
-    out = Image.new(im1.mode, (im1.size[0] + im2.size[0], max(im1.size[1], im2.size[1])))
-    out.paste(im1, (0, 0, im1.size[0], im1.size[1]))
-    out.paste(im2, (im1.size[0], 0, im2.size[0] + im1.size[0], im2.size[1]))
-    return out
-
-
 ### generates a new random number for each call
 def rand():
     return random.random() 
@@ -69,18 +55,19 @@ def rand_telemetry():
 
 ### continuously plots telemetry info 
 def plot_cont(xmax):
-#   i = 0 #dummy var to stall this thread until we have a packet to graph
-#   while (oldtel.value == 1) or (teldata == []):
-#       print ("pc")
-#       i += 2
-    latitudes = [teldata[1]]
-    longitudes = [teldata[2]]
+    i = 0 #dummy var to stall this thread until we have a packet to graph
+    while (oldtel.value == 1) or (teldata == []):
+#        print ("waiting for first telemetry packet...")
+        i += 2
+    latitudes = [100 * teldata[1]]
+    longitudes = [100 * teldata[2]]
     humidities = [teldata[3]]
     temperatures = [teldata[4]]
     altitudes = [teldata[5]]
     lights = [teldata[6]]
     voltages = [teldata[7]]
     oldtel.value = 1
+    print("lander has uprighted")
 
     fig = plt.figure()
     ax1 = fig.add_subplot(241) #latitude
@@ -133,11 +120,11 @@ def plot_cont(xmax):
         ax7.clear()
         ax7.plot(x, voltages, 'k-')
         ax7.set_ylabel('voltage (volts)')
- #      i = 0 #dummy var to stall this thread until we have a new packet to graph
- #      while (oldtel.value == 1) or (teldata == []):
- #          i += 2
-        latitudes.append(teldata[1])
-        longitudes.append(teldata[2])
+        i = 0 #dummy var to stall this thread until we have a new packet to graph
+        while (oldtel.value == 1) or (teldata == []):
+            i += 2
+        latitudes.append(100 * teldata[1])
+        longitudes.append(100 * teldata[2])
         humidities.append(teldata[3])
         temperatures.append(teldata[4])
         altitudes.append(teldata[5])
@@ -158,6 +145,36 @@ def plot_cont(xmax):
     plt.show()
 
 
+
+### displays an image from the local directory and prints out its properties
+def showimage(filename):
+    im = Image.open(filename)
+    print(im.format, im.size, im.mode)
+    im.show()
+
+
+### takes two images and returns a new image with the 1st stitched to the right of the 2nd
+### assumes 640x480 jpg images
+def stitch(title1, title2, imgnum):
+    width = 640
+    height = 480
+    im1_width = ((imgnum % 4) - 1) * width
+
+    im1 = Image.open(title1).convert('RGB')#.save(title1)
+    im2 = Image.open(title2).convert('RGB')#.save(title2)
+    out = Image.new('RGB', (im1.size[0] + im2.size[0], max(im1.size[1], im2.size[1])))
+    out.paste(im1, (0, 0, im1.size[0], im1.size[1]))
+    out.paste(im2, (im1.size[0], 0, im2.size[0] + im1.size[0], im2.size[1]))
+#    out = Image.new('RGB', (im1_width + width, height))
+#    out.paste(im1, (0, 0, im1_width, height))
+#    out.paste(im1, (0, 0, 640, 480); )
+#    out.paste(im2, (im1_width, 0, im1_width + width, height))
+    im2.show()
+    out.show()
+    out.save('pan' + str(imgnum-1) + '.jpg')
+    return out
+
+
 ### xbee functions:
 def my_recv_function(size, timeout):
     global ser
@@ -172,6 +189,7 @@ def my_send_function(to_send):
 def get_data():
     imgnum = 0
     packetnum = 0
+    tel_packetnum = 0
     firstpacket = False  #to see if a packet is the first in a new image (not the first image)
     tmp = None
     parsed_tmp = None
@@ -181,7 +199,8 @@ def get_data():
     image = open('out1.jpg', 'bw')  
 
     while True:
-        if oldtel.value == 1: #don't get a new packet unless the last one has been plotted
+#       if oldtel.value == 1: #don't get a new packet unless the last one has been plotted
+
             #for i in range (1,8):
             #    teldata[i] = rand() ##testing
             #seed = rand() ##testing
@@ -197,8 +216,9 @@ def get_data():
                 #if seed < 0.1:  ##testing
                 if tmp[0] == 0x45 and tmp[1] == 0x54:
                     packetnum += 1
-                    print("got a telemetry packet")
-                    print (str(packetnum) + " packets have been recieved") 
+                    tel_packetnum += 1
+                    print("got a telemetry packet: " + str(packetnum) + "recieved so far" )
+                    #print (str(packetnum) + " packets have been recieved") 
                     parsed_tmp = struct.unpack("<HffHffHf", tmp)
                     for i in range (1, 8): # the only way to update a global array
                         teldata[i] = parsed_tmp[i]
@@ -212,33 +232,39 @@ def get_data():
                     print("got a camera packet")
                     print (str(packetnum) + " packets have been recieved") 
                     parsed_tmp = struct.unpack("<HHB32s", tmp)
-                    parsed_tmp = [0x00, 0x00, 0x00, bytes([0x02]*32)]
+                    #parsed_tmp = [0x00, 0x00, 0x00, bytes([0x02]*32)]
                     camera_data = parsed_tmp[3]
 
-                    if imgnum < 4:  #assumes there are 4 images in a panorama
-                        if firstpacket: #starts a new image 
-                            image = open('out' + str(imgnum+1) + '.jpg', 'bw')  
-                            firstpacket = False
-                        image.write(parsed_tmp[3])  #add to current image
+#                   if imgnum < 4:  #assumes there are 4 images in a panorama
+                    if firstpacket: #starts a new image 
+                        image = open('out' + str(imgnum+1) + '.jpg', 'bw')  
+                        firstpacket = False
+                    image.write(parsed_tmp[3])  #add to current image
 
-                        if parsed_tmp[2] != 0:  #last packet in the image
-                            imgnum += 1 
-                            firstpacket = True
-                            print (str(imgnum) + " images have been constructed")
-                            if firstimg is None:
-                                firstimg = image
+                    if parsed_tmp[2] != 0:  #last packet in the image
+                        imgnum += 1 
+                        firstpacket = True #next packet is the first in a new image
+                        print (str(imgnum) + " images have been constructed")
+                        if firstimg is None and imgnum < 4: 
+                            firstimg = image
+                            #firstimg.show()
+                        elif imgnum < 4:
+                            if out is None:
+                                out = stitch('out1.jpg', 'out2.jpg', imgnum)
                             else:
-                                if out is None:
-                                    out = stitch(firstimg, image)
-                                else:
-                                    out = stitch(out, image)
-                                    out.show()
-                                    out.save('pan' + str(imgnum) + '.jpg')  #save iteration of panorama to disk
-                            image.save('img' + str(imgnum) + '.jpg')  #save image to disk 
-                            #image = None
+                                out = stitch('pan' + str(imgnum-2) + '.jpg', 'out' + str(imgnum) + '.jpg', imgnum)
+                                ##out.show()
+                                #out.PIL.save('pan' + str(imgnum) + '.jpg')  #save iteration of panorama to disk
 
-                    elif out is not None:
-                        out.save('completed_pan' + str((int)(imgnum/4)) + '.jpg')  #save final panorama to disk
+###                        else: #panorama is done and we just want to save more images
+###                            tempimg = Image.open('out'+str(imgnum)+'.jpg').convert('RGB')
+###                            out.save('pan' + str(imgnum-1) + '.jpg')
+
+                        #image.PIL.save('img' + str(imgnum) + '.jpg')  #save image to disk 
+                        #image = None
+
+                    #elif out is not None:
+                        #out.PIL.save('completed_pan' + str((int)(imgnum/4)) + '.jpg')  #save final panorama to disk
 
 
 
@@ -248,7 +274,7 @@ if __name__ == '__main__':
 
     try:
         getdatapr = mp.Process(target=get_data, args=())
-        plotpr = mp.Process(target=plot_cont, args=(99999,))
+        plotpr = mp.Process(target=plot_cont, args=(9999999,))
 
         getdatapr.start()
         plotpr.start()
