@@ -217,7 +217,7 @@ def get_data():
                 if tmp[0] == 0x45 and tmp[1] == 0x54:
                     packetnum += 1
                     tel_packetnum += 1
-                    print("got a telemetry packet: " + str(packetnum) + "recieved so far" )
+                    print("got a telemetry packet: " + str(packetnum) + " recieved so far" )
                     #print (str(packetnum) + " packets have been recieved") 
                     parsed_tmp = struct.unpack("<HffHffHf", tmp)
                     for i in range (1, 8): # the only way to update a global array
