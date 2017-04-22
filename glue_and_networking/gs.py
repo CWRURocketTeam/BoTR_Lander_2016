@@ -156,19 +156,19 @@ def showimage(filename):
 ### takes two images and returns a new image with the 1st stitched to the right of the 2nd
 ### assumes 640x480 jpg images
 def stitch(title1, title2, imgnum):
-    width = 640
-    height = 480
-    im1_width = ((imgnum % 4) - 1) * width
-
+#    width = 640
+#    height = 480
+#    im1_width = ((imgnum % 4) - 1) * width
+#    out = Image.new('RGB', (im1_width + width, height))
+#    out.paste(im1, (0, 0, im1_width, height))
+#    out.paste(im1, (0, 0, 640, 480); )
+#    out.paste(im2, (im1_width, 0, im1_width + width, height))
     im1 = Image.open(title1).convert('RGB')#.save(title1)
     im2 = Image.open(title2).convert('RGB')#.save(title2)
     out = Image.new('RGB', (im1.size[0] + im2.size[0], max(im1.size[1], im2.size[1])))
     out.paste(im1, (0, 0, im1.size[0], im1.size[1]))
     out.paste(im2, (im1.size[0], 0, im2.size[0] + im1.size[0], im2.size[1]))
-#    out = Image.new('RGB', (im1_width + width, height))
-#    out.paste(im1, (0, 0, im1_width, height))
-#    out.paste(im1, (0, 0, 640, 480); )
-#    out.paste(im2, (im1_width, 0, im1_width + width, height))
+
     im2.show()
     out.show()
     out.save('pan' + str(imgnum-1) + '.jpg')
@@ -235,7 +235,6 @@ def get_data():
                     #parsed_tmp = [0x00, 0x00, 0x00, bytes([0x02]*32)]
                     camera_data = parsed_tmp[3]
 
-#                   if imgnum < 4:  #assumes there are 4 images in a panorama
                     if firstpacket: #starts a new image 
                         image = open('out' + str(imgnum+1) + '.jpg', 'bw')  
                         firstpacket = False
@@ -247,24 +246,13 @@ def get_data():
                         print (str(imgnum) + " images have been constructed")
                         if firstimg is None and imgnum < 4: 
                             firstimg = image
-                            #firstimg.show()
+                            piltemp = Image.open('out1.jpg').convert('RGB')
+                            piltemp.show()
                         elif imgnum < 4:
                             if out is None:
                                 out = stitch('out1.jpg', 'out2.jpg', imgnum)
                             else:
                                 out = stitch('pan' + str(imgnum-2) + '.jpg', 'out' + str(imgnum) + '.jpg', imgnum)
-                                ##out.show()
-                                #out.PIL.save('pan' + str(imgnum) + '.jpg')  #save iteration of panorama to disk
-
-###                        else: #panorama is done and we just want to save more images
-###                            tempimg = Image.open('out'+str(imgnum)+'.jpg').convert('RGB')
-###                            out.save('pan' + str(imgnum-1) + '.jpg')
-
-                        #image.PIL.save('img' + str(imgnum) + '.jpg')  #save image to disk 
-                        #image = None
-
-                    #elif out is not None:
-                        #out.PIL.save('completed_pan' + str((int)(imgnum/4)) + '.jpg')  #save final panorama to disk
 
 
 
